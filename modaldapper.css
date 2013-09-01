@@ -1,0 +1,12 @@
+
+#simplemodal-overlay {
+   background: black;
+   opacity: 0.75;
+}
+
+#modaldapper-window {
+   background: white;
+   border-radius: 20px;
+   padding: 10px;
+}
+
