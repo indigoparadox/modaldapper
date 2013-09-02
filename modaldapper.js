@@ -6,20 +6,24 @@ function modaldapper_submit() {
    // Figure out what the current form does and build the submit path
    // accordingly. Sanitization and validation happen server-side.
    var action = $('#modaldapper-action').val();
-   var modaldapper_path_query = modaldapper_path;
+   var modaldapper_path_query = modaldapper_path + '?action=' + action;
    switch( action ) {
       case 'token':
+         var login = $('#modaldapper-login').val();
+         var token = $('#modaldapper-token').val();
+         modaldapper_path_query += '&login=' + login + '&token=' + token;
          break;
 
       case 'login':
          var login = $('#modaldapper-login').val();
          var retrieve = $('#modaldapper-retrieve').val();
-         modaldapper_path_query += '?action=' + action + '&login=' + login +
-            '&retrieve=' + retrieve;
+         modaldapper_path_query += '&login=' + login + '&retrieve=' + retrieve;
          break;
    }
 
-   // TODO: Disable continue button until load complete.
+   // Disable continue button until load complete.
+   $('#modaldapper-submit').unbind( 'click' );
+   $('#modaldapper-submit').attr( 'disabled', 'disabled' );
 
    // Fade out during load and then fade back in.
    $('#modaldapper-window-contents').animate(
@@ -27,12 +31,18 @@ function modaldapper_submit() {
       250,
       function() {
          $.get( modaldapper_path_query, function( data ) {
-            // Display the token form.
+            // Display the form.
             $('#modaldapper-window-contents').html( data ).animate(
-               { 'opacity': 1 }, 250
+               { 'opacity': 1 },
+               250,
+               function() {
+                  $('#modaldapper-submit').bind( 'click', modaldapper_submit );
+                  $('#modaldapper-submit').attr( 'disabled', false );
+
+                  // Prepare special elements that may be present.
+                  $('#modaldapper-password').passStrengthify();
+               }
             );
-            $('#modaldapper-submit').click( modaldapper_submit );
-            $('#modaldapper-close').click( modaldapper_close );
          } );
       }
    );
@@ -66,6 +76,19 @@ function modaldapper_get_path() {
 }
 
 $(document).ready( function() {
-   $('#password-reset-ldap').click( modaldapper_reset_link );
+   // Load dependencies before we're allowed to proceed.
+   $('#password-reset-ldap').css( 'display', 'none' );
+   $.getScript(
+      modaldapper_get_path() + 'jquery.simplemodal.min.js',
+      function() {
+         $.getScript(
+            modaldapper_get_path() + 'jquery.passstrength.js',
+            function() {
+               $('#password-reset-ldap').fadeIn();
+               $('#password-reset-ldap').click( modaldapper_reset_link );
+            }
+         );
+      }
+   );
 } );
 

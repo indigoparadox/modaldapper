@@ -47,6 +47,26 @@ function modaldapper_ldap_bind( $user=null, $password=null ) {
    return $bind_result ? $ldap : null;
 }
 
+function modaldapper_database_compare_token_hash( $connection, $hash ) {
+   global $modaldapper_config;
+   switch( $modaldapper_config['database']['type'] ) {
+      case 'mysqli':
+         // Fetch rows that match the given login and compare them to input
+         // hash.
+         $result = mysqli_query( $connection, 'SELECT * FROM `tokens`' );
+         if( $result ) {
+            while( $row = mysqli_fetch_assoc( $result ) ) {
+               if( $row['token_hash'] == $hash ) {
+                  return $row['login'];
+               }
+            }
+         }
+
+         // Fail by default.
+         return null;
+   }
+}
+
 function modaldapper_database_store_token_hash( $connection, $login, $hash ) {
    global $modaldapper_config;
    switch( $modaldapper_config['database']['type'] ) {
@@ -59,7 +79,7 @@ function modaldapper_database_store_token_hash( $connection, $login, $hash ) {
          mysqli_query(
             $connection,
             'INSERT INTO `tokens` '.
-               '(`account`, `token_hash`) '.
+               '(`login`, `token_hash`) '.
                $values
          );
          break;
@@ -86,7 +106,7 @@ function modaldapper_database_connect() {
                $connection,
                'CREATE TABLE tokens ( '.
                   '`id` int(11) AUTO_INCREMENT, '.
-                  '`account` varchar(255) NOT NULL, '.
+                  '`login` varchar(255) NOT NULL, '.
                   '`token_hash` varchar(255) NOT NULL, '.
                   '`created` timestamp DEFAULT CURRENT_TIMESTAMP, '.
                   'PRIMARY KEY (ID)'.
@@ -123,10 +143,40 @@ function modaldapper_generate_token() {
 switch( isset( $_GET['action'] ) ? $_GET['action'] : '' ) {
 
    case 'password':
+
+      // TODO: Set the new account password.
+
       break;
 
    case 'token':
-      // TODO: Display the new password entry form.
+      // Test the token.
+      $database = modaldapper_database_connect();
+      $token_login = modaldapper_database_compare_token_hash(
+         $database,
+         crypt(
+            $_GET['token'],
+            '$5$rounds=5000$'.$modaldapper_config['database']['salt'].'$'
+         )
+      );
+
+      if( !empty( $token_login ) ) {
+         // Display the new password entry form.
+         ?><p>Please enter a new password for your account below.</p>
+         <div>
+            <label for="modaldapper-password">Password:</label>
+            <input type="password" id="modaldapper-password" />
+            <input type="hidden" id="modaldapper-action" value="password" />
+         </div><?php
+      } else {
+         // Display an error message and hidden redirect to token form.
+         ?><p>
+            An invalid token was specified. Click Continue below to return to
+            the token entry page.
+         </p>
+         <div>
+            <input type="hidden" id="modaldapper-action" value="tokenform" />
+         </div><?php
+      }
       break;
       
    case 'login':
@@ -142,12 +192,6 @@ switch( isset( $_GET['action'] ) ? $_GET['action'] : '' ) {
       );
       $ldap_entries = ldap_get_entries( $service_bind, $search_result );
       $login_valid = 0 < $ldap_entries['count'] ? true : false;
-
-      switch( $_GET['retrieve'] ) {
-         case 'email':
-            $retrieve = 'E-Mail';
-            break;
-      }
 
       if( $login_valid ) {
          
@@ -211,11 +255,15 @@ switch( isset( $_GET['action'] ) ? $_GET['action'] : '' ) {
             );
          }
       }
-         
+
+      // Don't break or anything, here. Proceed directly to the token form.
+
+   case 'tokenform':
+      
       // Always display the token entry form to psyche out guessers.
       ?><p>
-         A verification token has been transmitted to you through
-         <?php echo( $retrieve ) ?>. Please enter that token in the field below.
+         A verification token has been transmitted to you through the alternate
+         channel you have selected. Please enter that token in the field below.
       </p>
       <div>
          <label for="modaldapper-token">Token:</label>

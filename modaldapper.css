@@ -14,11 +14,18 @@
 
 #modaldapper-window-contents {
    background: white;
+   min-height: 140px;
 }
 
 #modaldapper-window-controls {
    position: absolute;
    left: 10px;
    bottom: 10px;
+}
+
+#modaldapper-window .passStengthify {
+   position: relative;
+   left: 15px;
+   top: 5px;
 }
 
