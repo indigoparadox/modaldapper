@@ -13,6 +13,8 @@ function modaldapper_ldap_bind( $user=null, $password=null ) {
    // Figure out the credentials to use.
    if( $user && $password ) {
       $user_clean = sanitize( $user, LDAP );
+      // It seems ldap_bind may already sanitize its inputs. Sanitizing here
+      // causes a password with special characters not to work.
       //$password_clean = sanitize( $password, LDAP );
       $password_clean = $password;
    } else {
