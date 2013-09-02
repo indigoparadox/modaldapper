@@ -1,11 +1,26 @@
 
-var modaldapper_path = modaldapper_get_path() + '/modaldapper.php';
+var modaldapper_path = modaldapper_get_path() + 'modaldapper.php';
 
-function modaldapper_submit_login() {
-   var login = $('#modaldapper-login').val();
-   $.get( modaldapper_path + '?action=login&login=' + login, function( data ) {
+function modaldapper_submit() {
+
+   // Figure out what the current form does and build the submit path
+   // accordingly. Sanitization and validation happen server-side.
+   var action = $('#modaldapper-action').val();
+   var modaldapper_path_query = modaldapper_path;
+   switch( action ) {
+      case 'token':
+         break;
+
+      case 'login':
+         var login = $('#modaldapper-' + action).val();
+         modaldapper_path_query += '?action=' + action + '&login=' + login;
+         break;
+   }
+
+   $.get( modaldapper_path_query, function( data ) {
       // Display the token form.
       $('#modaldapper-window').html( data );
+      $('#modaldapper-submit').click( modaldapper_submit );
       $('#modaldapper-close').click( modaldapper_close );
    } );
 }
@@ -15,15 +30,11 @@ function modaldapper_reset_link() {
       .appendTo( $('head') )
       .attr( {type : 'text/css', rel : 'stylesheet'} )
       .attr( 'href', modaldapper_get_path() + 'modaldapper.css' );
-   $.get( modaldapper_path, function( data ) {
-      // Display the login form.
-      $.modal(
-         '<div id="modaldapper-window">' + data + '</div>',
-         { 'escClose': true }
-      );
-      $('#modaldapper-login-submit').click( modaldapper_submit_login );
-      $('#modaldapper-close').click( modaldapper_close );
-   } );
+   $.modal(
+      '<div id="modaldapper-window"></div>',
+      { 'escClose': true }
+   );
+   modaldapper_submit();
 }
 
 function modaldapper_close() {
