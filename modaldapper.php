@@ -3,6 +3,26 @@
 require_once( 'config.inc.php' );
 require_once( 'sanitize.inc.php' );
 
+function modaldapper_ldap_set_password( $ldap, $login=null, $password ) {
+   
+   // Salt and hash the password.
+   mt_srand( (double)microtime() * 1000000 );
+   $salt = pack( 'CCCC', mt_rand(), mt_rand(), mt_rand(), mt_rand() );
+   $hash = '{SSHA}'.base64_encode( pack( 'H*', sha1( $password.$salt) ).$salt );
+
+   // Update the LDAP directory.
+   $entry = array(
+      $modaldapper_config['ldap']['password_field'] => $hash,
+   );
+   $login_dn = sprintf(
+      '%s=%s,%s',
+      $modaldapper_config['ldap']['cn_field'],
+      sanitize( $login, LDAP ),
+      $modaldapper_config['ldap']['basedn']
+   );
+   return ldap_modify( $ldap, $login_dn, $entry );
+}
+
 function modaldapper_ldap_bind( $user=null, $password=null ) {
 
    // Bind to LDAP with the given credentials or bind with the service account
@@ -57,6 +77,7 @@ function modaldapper_database_compare_token_hash( $connection, $hash ) {
          if( $result ) {
             while( $row = mysqli_fetch_assoc( $result ) ) {
                if( $row['token_hash'] == $hash ) {
+                  // TODO: Delete all existing tokens for this user.
                   return $row['login'];
                }
             }
@@ -145,6 +166,9 @@ switch( isset( $_GET['action'] ) ? $_GET['action'] : '' ) {
    case 'password':
 
       // TODO: Set the new account password.
+      //modaldapper_ldap_set_password( $ldap, $_GET['login'], $_GET['password']
+
+      // TODO: E-Mail the site administrator.
 
       break;
 
@@ -248,7 +272,7 @@ switch( isset( $_GET['action'] ) ? $_GET['action'] : '' ) {
                $config['admin']['email'],
                sprintf(
                   '%s New Password Reset Request',
-                  $modaldapper_configconfig['site']['name']
+                  $modaldapper_config['site']['name']
                ),
                wordwrap( $admin_message, 70, "\r\n" ),
                $mail_headers
