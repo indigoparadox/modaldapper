@@ -1,7 +1,5 @@
 <?php
 
-require_once( 'sanitize.php' );
-
 class LDAPReset {
    protected $connection;
 
@@ -30,35 +28,19 @@ class LDAPReset {
 */
 
    public function search( $user, $cnfield, $basedn ) {
-      $search_query = sprintf(
-         '(%s=%s)',
-         sanitize( $cnfield, LDAP ),
-         sanitize( $user, LDAP )
-      );
-      $search_result = ldap_search(
+      $query = sprintf( '(%s=%s)', $cnfield, $user );
+      $result = ldap_search(
          $this->connection,
          $basedn,
-         $search_query,
+         $query,
          array( $cnfield, 'mail' )
       );
-      $ldap_entries = ldap_get_entries( $this->connection, $search_result );
-      $login_valid = 0 < $ldap_entries['count'] ? true : false;
+      return ldap_get_entries( $this->connection, $result );
    }
 
    public function connect( $user, $password, $host, $port, $version ) {
-
-      if( !empty( $user ) ) {
-         $user = sanitize( $user, LDAP );
-         // It seems _bind may already sanitize its inputs. Sanitizing here
-         // causes a password with special characters not to work.
-         //$password = sanitize( $password, LDAP );
-      }
-
-      // Perform the connection.
       $this->connection = ldap_connect( $host, $port );
-
       ldap_set_option( $this->connection, LDAP_OPT_PROTOCOL_VERSION, $version );
-
       if( !empty( $user ) && !empty( $password ) ) {
          return ldap_bind( $this->connection, $user, $password );
       } else {
