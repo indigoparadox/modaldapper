@@ -11,7 +11,9 @@ function modaldapper_submit() {
       case 'token':
          var login = $('#modaldapper-login').val();
          var token = $('#modaldapper-token').val();
-         modaldapper_path_query += '&login=' + login + '&token=' + token;
+         var password = $('#modaldapper-password').val();
+         modaldapper_path_query += '&login=' + login + '&token=' + token +
+            '&password=' + password;
          break;
 
       case 'login':
@@ -64,7 +66,7 @@ function modaldapper_reset_link() {
          'closeClass': 'modaldapper-close',
          'containerId': 'modaldapper-window',
          'minWidth': 280,
-         'minHeight': 230,
+         'minHeight': 330,
       }
    );
    modaldapper_submit();

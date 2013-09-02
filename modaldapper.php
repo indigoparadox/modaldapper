@@ -4,6 +4,8 @@ require_once( 'config.inc.php' );
 require_once( 'sanitize.inc.php' );
 
 function modaldapper_ldap_set_password( $ldap, $login=null, $password ) {
+
+   global $modaldapper_config;
    
    // Salt and hash the password.
    mt_srand( (double)microtime() * 1000000 );
@@ -163,15 +165,6 @@ function modaldapper_generate_token() {
 ?><form action="modaldapper.php" method="post"><?php
 switch( isset( $_GET['action'] ) ? $_GET['action'] : '' ) {
 
-   case 'password':
-
-      // TODO: Set the new account password.
-      //modaldapper_ldap_set_password( $ldap, $_GET['login'], $_GET['password']
-
-      // TODO: E-Mail the site administrator.
-
-      break;
-
    case 'token':
       // Test the token.
       $database = modaldapper_database_connect();
@@ -184,13 +177,26 @@ switch( isset( $_GET['action'] ) ? $_GET['action'] : '' ) {
       );
 
       if( !empty( $token_login ) ) {
-         // Display the new password entry form.
-         ?><p>Please enter a new password for your account below.</p>
-         <div>
-            <label for="modaldapper-password">Password:</label>
-            <input type="password" id="modaldapper-password" />
-            <input type="hidden" id="modaldapper-action" value="password" />
-         </div><?php
+
+         // TODO: Validate the new account password.
+
+         // Set the new account password.
+         $ldap = modaldapper_ldap_bind();
+         $success = modaldapper_ldap_set_password(
+            $ldap, $token_login, $_GET['password']
+         );
+
+         // TODO: E-Mail the site administrator.
+
+         if( false === $success ) {
+            ?><p>
+               There was a problem setting your password. Please contact the
+               site administrator.
+            </p><?php
+         } else {
+            ?><p>Your password has been reset successfully.</p><?php
+         }
+
       } else {
          // Display an error message and hidden redirect to token form.
          ?><p>
@@ -287,12 +293,15 @@ switch( isset( $_GET['action'] ) ? $_GET['action'] : '' ) {
       // Always display the token entry form to psyche out guessers.
       ?><p>
          A verification token has been transmitted to you through the alternate
-         channel you have selected. Please enter that token in the field below.
+         channel you have selected. Please enter that token in the field below
+         along with a new password.
       </p>
       <div>
          <label for="modaldapper-token">Token:</label>
          <input type="text" id="modaldapper-token" />
          <input type="hidden" id="modaldapper-action" value="token" />
+         <label for="modaldapper-password">Password:</label>
+         <input type="password" id="modaldapper-password" />
       </div><?php
       break;
 
