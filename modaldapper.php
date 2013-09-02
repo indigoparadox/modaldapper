@@ -13,14 +13,16 @@ function modaldapper_ldap_bind( $user=null, $password=null ) {
    // Figure out the credentials to use.
    if( $user && $password ) {
       $user_clean = sanitize( $user, LDAP );
-      $password_clean = sanitize( $password, LDAP );
+      //$password_clean = sanitize( $password, LDAP );
+      $password_clean = $password;
    } else {
       $user_clean = sanitize(
          $modaldapper_config['ldap']['service_user'], LDAP
       );
-      $password_clean = sanitize(
+      /* $password_clean = sanitize(
          $modaldapper_config['ldap']['service_pass'], LDAP
-      );
+      ); */
+      $password_clean = $modaldapper_config['ldap']['service_pass'];
    }
 
    // Perform the connection.
@@ -32,17 +34,19 @@ function modaldapper_ldap_bind( $user=null, $password=null ) {
    ldap_set_option( $ldap, LDAP_OPT_PROTOCOL_VERSION, 3 );
 
    if( !empty( $user_clean ) && !empty( $password_clean ) ) {
-      return ldap_bind( $ldap, $user_clean, $password_clean );
+      $bind_result = ldap_bind( $ldap, $user_clean, $password_clean );
    } else {
       // Try to bind anonymously if no credentials available.
-      return ldap_bind( $ldap );
+      $bind_result = ldap_bind( $ldap );
    }
+
+   return $bind_result ? $ldap : null;
 }
 
 // TODO: Verify HTTPS.
 
 ?><form action="modaldapper.php" method="post"><?php
-switch( isset( $_POST['action'] ) ? $_POST['action'] : '' ) {
+switch( isset( $_GET['action'] ) ? $_GET['action'] : '' ) {
 
    case 'token':
       // TODO: Display the new password entry form.
@@ -52,8 +56,15 @@ switch( isset( $_POST['action'] ) ? $_POST['action'] : '' ) {
 
       // TODO: Determine if the login is valid.
       $service_bind = modaldapper_ldap_bind();
-      print_r( $service_bind );
-      $login_valid = $service_bind ? true : false;
+      $search_query = sprintf( '(uid=%s)', sanitize( $_GET['login'], LDAP ) );
+      $search_result = ldap_search(
+         $service_bind,
+         $modaldapper_config['ldap']['basedn'],
+         $search_query,
+         array( 'uid' )
+      );
+      $ldap_entries = ldap_get_entries( $service_bind, $search_result );
+      $login_valid = 0 < $ldap_entries['count'] ? true : false;
 
       if( $login_valid ) {
          // TODO: Send the token e-mail/SMS/IM/whatever.
@@ -61,11 +72,11 @@ switch( isset( $_POST['action'] ) ? $_POST['action'] : '' ) {
          // Display the token entry form.
          ?><div>
             <label for="modaldapper-token">Key:</label>
-            <input type="password" id="modaldapper-token" />
+            <input type="text" id="modaldapper-token" />
          </div>
          <div>
-            <input type="hidden" name="action" value="token" />
-            <input type="submit" value="Submit" />
+            <input type="hidden" id="modaldapper-action" value="token" />
+            <input type="button" id="modaldapper-submit" value="Submit" />
          </div><?php
       } else {
          ?>
@@ -81,19 +92,19 @@ switch( isset( $_POST['action'] ) ? $_POST['action'] : '' ) {
          retrieve your password change token.
       </p>
       <div>
-         <label for="login">Login name:</label>
-         <input type="text" id="login" name="login" />
+         <label for="login">Login Name:</label>
+         <input type="text" id="modaldapper-login" />
       </div>
       <div>
-         <label for="retrieve">Retrieval Method:</label>
-         <select id="retrieve" name="retrieve">
+         <label for="modaldapper-retrieve">Retrieval Method:</label>
+         <select id="modaldapper-retrieve">
             <option value="mail">E-Mail</option>
          </select>
       </div>
       <div>
-         <input type="hidden" name="action" value="login" />
-         <input type="submit" value="Submit" />
+         <input type="hidden" id="modaldapper-action" value="login" />
+         <input type="button" id="modaldapper-submit" value="Submit" />
       </div><?php
       break;
 }
-
+?></form>
