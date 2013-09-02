@@ -73,10 +73,7 @@ switch( isset( $_GET['action'] ) ? $_GET['action'] : '' ) {
          ?><div>
             <label for="modaldapper-token">Key:</label>
             <input type="text" id="modaldapper-token" />
-         </div>
-         <div>
             <input type="hidden" id="modaldapper-action" value="token" />
-            <input type="button" id="modaldapper-submit" value="Submit" />
          </div><?php
       } else {
          ?>
@@ -100,10 +97,7 @@ switch( isset( $_GET['action'] ) ? $_GET['action'] : '' ) {
          <select id="modaldapper-retrieve">
             <option value="mail">E-Mail</option>
          </select>
-      </div>
-      <div>
          <input type="hidden" id="modaldapper-action" value="login" />
-         <input type="button" id="modaldapper-submit" value="Submit" />
       </div><?php
       break;
 }

@@ -17,12 +17,23 @@ function modaldapper_submit() {
          break;
    }
 
-   $.get( modaldapper_path_query, function( data ) {
-      // Display the token form.
-      $('#modaldapper-window').html( data );
-      $('#modaldapper-submit').click( modaldapper_submit );
-      $('#modaldapper-close').click( modaldapper_close );
-   } );
+   // TODO: Disable continue button until load complete.
+
+   // Fade out during load and then fade back in.
+   $('#modaldapper-window-contents').animate(
+      { 'opacity': 0 },
+      250,
+      function() {
+         $.get( modaldapper_path_query, function( data ) {
+            // Display the token form.
+            $('#modaldapper-window-contents').html( data ).animate(
+               { 'opacity': 1 }, 250
+            );
+            $('#modaldapper-submit').click( modaldapper_submit );
+            $('#modaldapper-close').click( modaldapper_close );
+         } );
+      }
+   );
 }
 
 function modaldapper_reset_link() {
@@ -31,8 +42,18 @@ function modaldapper_reset_link() {
       .attr( {type : 'text/css', rel : 'stylesheet'} )
       .attr( 'href', modaldapper_get_path() + 'modaldapper.css' );
    $.modal(
-      '<div id="modaldapper-window"></div>',
-      { 'escClose': true }
+      '<div id="modaldapper-window-contents"></div>' +
+      '<div id="modaldapper-window-controls">' +
+      '<input type="button" id="modaldapper-submit" value="Continue" />' +
+      '<input type="button" class="modaldapper-close" value="Close" />' +
+      '</div>',
+      {
+         'escClose': true,
+         'closeClass': 'modaldapper-close',
+         'containerId': 'modaldapper-window',
+         'minWidth': 280,
+         'minHeight': 230,
+      }
    );
    modaldapper_submit();
 }
