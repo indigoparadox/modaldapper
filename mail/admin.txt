@@ -1,0 +1,1 @@
+A new password reset request has been {{@req_op}} for the user {{@req_user}} by a client at the IP {{@req_ip}}.

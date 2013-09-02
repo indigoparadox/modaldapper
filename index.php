@@ -1,54 +1,65 @@
 <?php
 
 $f3 = require( 'include/f3/base.php' );
+$f3->config( 'config/modaldapper.cfg' );
 
-$f3->set( 'DEBUG', 3 );
-
-require_once( 'config.inc.php' );
+require_once( 'include/sanitize.php' );
 
 //$f3->route( 'GET /token [ajax]', function() {
 $f3->route( 'GET /token', function() {
+   global $f3;
 
-   global $modaldapper_config;
-
-   $ldap = require( 'include/reset.php' );
-
-   $ldap->connect(
-      $modaldapper_config['ldap']['service_user'],
-      $modaldapper_config['ldap']['service_pass'],
-      $modaldapper_config['ldap']['host'],
-      $modaldapper_config['ldap']['port'],
-      $modaldapper_config['ldap']['version']
-   );
-
-   $ldap->search(
-      // XXX
-      '',
-      $modaldapper_config['ldap']['cn_field'],
-      $modaldapper_config['ldap']['base_dn']
-   );
-/*
    // Determine if the login is valid.
-
+   $ldap = require( 'include/reset.php' );
+   $ldap->connect(
+      $f3->get( 'ldap_service_user' ), $f3->get( 'ldap_service_pass' ),
+      $f3->get( 'ldap_host' ), $f3->get( 'ldap_port' ),
+      $f3->get( 'ldap_version' )
+   );
+   $result = $ldap->search(
+      sanitize( $f3->get( 'GET.login' ), LDAP ),
+      $f3->get( 'ldap_cn_field' ),
+      $f3->get( 'ldap_base_dn' )
+   );
+   $login_valid = 0 < $result['count'] ? true : false;
    if( $login_valid ) {
-         
-      $mail_headers = sprintf(
-         "From: %s\r\n",
-         $modaldapper_config['site']['email']
+      // Connect to the database.
+      $database = new DB\SQL(
+         $f3->get( 'db_config' ), $f3->get( 'db_user' ), $f3->get( 'db_pass' )
       );
-
-      // Generate and store the verification token.
-      $database = modaldapper_database_connect();
-      $token = modaldapper_generate_token();
-      modaldapper_database_store_token_hash(
-         $database,
-         $_GET['login'],
+      
+      // Generate and store the token.
+      $crypto = true;
+      $token = substr( base64_encode(
+         openssl_random_pseudo_bytes( mt_rand( 20, 50 ), $crypto )
+      ), 0, -2 );
+      $database->exec(
+         'INSERT INTO `tokens` (`login`, `token_hash`) VALUES (\'%s\', \'%s\')',
+         $f3->get( 'GET.login' ),
+         // Hash the token for storage.
          crypt(
             $token,
-            '$5$rounds=5000$'.$modaldapper_config['database']['salt'].'$'
+            '$5$rounds=5000$'.$f3->get( 'database_salt' ).'$'
          )
       );
 
+      // E-mail the administrator.
+      if( $f3->get( 'admin_email' ) ) {
+         $f3->set( 'req_op', 'generated' );
+         $f3->set( 'req_user', $f3->get( 'GET.login' ) );
+         $f3->set( 'req_ip', $f3->get( 'SERVER.REMOTE_ADDR' ) );
+         mail(
+            $f3->get( 'admin_email' ),
+            sprintf( '%s New Password Reset Request', $f3->get( 'site_name' ) ),
+            wordwrap(
+               Template::instance()->render( 'mail/admin.txt' ), 70, "\r\n"
+            ),
+            sprintf( "From: %s\r\n", $f3->get( 'site_email' ) )
+         );
+      }
+   }
+         
+/*
       // Send the verification token.
       switch( $_GET['retrieve'] ) {
          case 'email':
@@ -73,31 +84,13 @@ $f3->route( 'GET /token', function() {
             break;
       }
 
-      // E-mail the administrator.
-      if( !empty( $config['admin']['email'] ) ) {
-         $admin_message = sprintf(
-            'A new password reset request has been generated for the user '.
-            '%s by a client at the IP %s.',
-            sanitize( $_GET['login'], PARANOID ),
-            sanitize( $_SERVER['REMOTE_ADDR'], PARANOID )
-         );
-         mail(
-            $config['admin']['email'],
-            sprintf(
-               '%s New Password Reset Request',
-               $modaldapper_config['site']['name']
-            ),
-            wordwrap( $admin_message, 70, "\r\n" ),
-            $mail_headers
-         );
-      }
    }
 */
+   echo( Template::instance()->render( 'templates/token.html' ) );
 } );
 
 $f3->route( 'GET /', function() {
-   $template = new Template;
-   echo( $template->render( 'templates/login.html' ) );
+   echo( Template::instance()->render( 'templates/login.html' ) );
 } );
 
 $f3->run();
