@@ -33,7 +33,9 @@ function modaldapper_ldap_bind( $user=null, $password=null ) {
       $modaldapper_config['ldap']['port']
    );
 
-   ldap_set_option( $ldap, LDAP_OPT_PROTOCOL_VERSION, 3 );
+   ldap_set_option(
+      $ldap, LDAP_OPT_PROTOCOL_VERSION, $modaldapper_config['ldap']['version']
+   );
 
    if( !empty( $user_clean ) && !empty( $password_clean ) ) {
       $bind_result = ldap_bind( $ldap, $user_clean, $password_clean );
@@ -43,6 +45,44 @@ function modaldapper_ldap_bind( $user=null, $password=null ) {
    }
 
    return $bind_result ? $ldap : null;
+}
+
+/* function modaldapper_database_fetch( $table, $where ) {
+   switch( $modaldapper_config['database']['type'] ) {
+      case 'mysqli':
+   }
+} */
+
+function modaldapper_database_connect() {
+   global $modaldapper_config;
+   switch( $modaldapper_config['database']['type'] ) {
+      case 'mysqli':
+         // Connect to the database.
+         $connection = new mysqli(
+            $modaldapper_config['database']['host'],
+            $modaldapper_config['database']['user'],
+            $modaldapper_config['database']['pass'],
+            $modaldapper_config['database']['db']
+         );
+
+         // See if the tokens table exists.
+         $result = mysqli_query( $connection, 'SELECT * FROM `tokens`' );
+         if( empty( $result ) ) {
+            // Create the tokens table.
+            $result = mysqli_query(
+               $connection,
+               'CREATE TABLE tokens ( '.
+                  '`id` int(11) AUTO_INCREMENT, '.
+                  '`account` varchar(255) NOT NULL, '.
+                  '`token_hash` varchar(255) NOT NULL, '.
+                  '`created` timestamp DEFAULT CURRENT_TIMESTAMP, '.
+                  'PRIMARY KEY (ID)'.
+               ')'
+            );
+         }
+
+         return $connection;
+   }
 }
 
 // TODO: Verify HTTPS.
@@ -56,7 +96,7 @@ switch( isset( $_GET['action'] ) ? $_GET['action'] : '' ) {
       
    case 'login':
 
-      // TODO: Determine if the login is valid.
+      // Determine if the login is valid.
       $service_bind = modaldapper_ldap_bind();
       $search_query = sprintf( '(uid=%s)', sanitize( $_GET['login'], LDAP ) );
       $search_result = ldap_search(
@@ -82,6 +122,7 @@ switch( isset( $_GET['action'] ) ? $_GET['action'] : '' ) {
          );
 
          // TODO: Generate and store the verification token.
+         $database = modaldapper_database_connect();
          $token = '';
 
          // Send the verification token.
