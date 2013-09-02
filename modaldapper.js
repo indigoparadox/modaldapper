@@ -12,8 +12,10 @@ function modaldapper_submit() {
          break;
 
       case 'login':
-         var login = $('#modaldapper-' + action).val();
-         modaldapper_path_query += '?action=' + action + '&login=' + login;
+         var login = $('#modaldapper-login').val();
+         var retrieve = $('#modaldapper-retrieve').val();
+         modaldapper_path_query += '?action=' + action + '&login=' + login +
+            '&retrieve=' + retrieve;
          break;
    }
 
@@ -56,10 +58,6 @@ function modaldapper_reset_link() {
       }
    );
    modaldapper_submit();
-}
-
-function modaldapper_close() {
-   
 }
 
 function modaldapper_get_path() {
