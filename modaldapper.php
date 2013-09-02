@@ -1,6 +1,6 @@
 <?php
 
-require_once( 'config.php' );
+require_once( 'config.inc.php' );
 require_once( 'sanitize.inc.php' );
 
 function modaldapper_ldap_bind( $user=null, $password=null ) {
