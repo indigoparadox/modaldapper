@@ -47,11 +47,24 @@ function modaldapper_ldap_bind( $user=null, $password=null ) {
    return $bind_result ? $ldap : null;
 }
 
-/* function modaldapper_database_fetch( $table, $where ) {
+function modaldapper_database_store_token_hash( $connection, $login, $hash ) {
+   global $modaldapper_config;
    switch( $modaldapper_config['database']['type'] ) {
       case 'mysqli':
+         $values = sprintf(
+            'VALUES (\'%s\', \'%s\')',
+            mysqli_real_escape_string( $connection, $login ),
+            mysqli_real_escape_string( $connection, $hash )
+         );
+         mysqli_query(
+            $connection,
+            'INSERT INTO `tokens` '.
+               '(`account`, `token_hash`) '.
+               $values
+         );
+         break;
    }
-} */
+}
 
 function modaldapper_database_connect() {
    global $modaldapper_config;
@@ -85,10 +98,32 @@ function modaldapper_database_connect() {
    }
 }
 
+function modaldapper_generate_token() {
+   $length = mt_rand( 20, 50 );
+   $charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+
+   // Try to use a stronger method if available.
+   if( function_exists( 'openssl_random_pseudo_bytes' ) ) {
+      $crypto = true;
+      return substr(
+         base64_encode( openssl_random_pseudo_bytes( $length, $crypto ) ), 0, -2
+      );
+   } else {
+      $str = '';
+      while( $length-- ) {
+         $str .= $charset[mt_rand( 0, strlen( $charset ) - 1 )];
+      }
+      return $str;
+   }
+}
+
 // TODO: Verify HTTPS.
 
 ?><form action="modaldapper.php" method="post"><?php
 switch( isset( $_GET['action'] ) ? $_GET['action'] : '' ) {
+
+   case 'password':
+      break;
 
    case 'token':
       // TODO: Display the new password entry form.
@@ -121,9 +156,17 @@ switch( isset( $_GET['action'] ) ? $_GET['action'] : '' ) {
             $modaldapper_config['site']['email']
          );
 
-         // TODO: Generate and store the verification token.
+         // Generate and store the verification token.
          $database = modaldapper_database_connect();
-         $token = '';
+         $token = modaldapper_generate_token();
+         modaldapper_database_store_token_hash(
+            $database,
+            $_GET['login'],
+            crypt(
+               $token,
+               '$5$rounds=5000$'.$modaldapper_config['database']['salt'].'$'
+            )
+         );
 
          // Send the verification token.
          switch( $_GET['retrieve'] ) {
