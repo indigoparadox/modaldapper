@@ -5,6 +5,8 @@
 }
 
 #modaldapper-window {
+   /* Always show the loader in the background so it's present whenever the   *
+    * main contents window is hidden.                                         */
    background: white url( ajax-loader.gif ) no-repeat center 40%;
    border-radius: 20px;
    padding: 10px;
