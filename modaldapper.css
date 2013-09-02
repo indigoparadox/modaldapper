@@ -5,9 +5,13 @@
 }
 
 #modaldapper-window {
-   background: white;
+   background: white url( ajax-loader.gif ) no-repeat center 40%;
    border-radius: 20px;
    padding: 10px;
+}
+
+#modaldapper-window-contents {
+   background: white;
 }
 
 #modaldapper-window-controls {

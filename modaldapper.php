@@ -61,25 +61,81 @@ switch( isset( $_GET['action'] ) ? $_GET['action'] : '' ) {
          $service_bind,
          $modaldapper_config['ldap']['basedn'],
          $search_query,
-         array( 'uid' )
+         array( 'uid', 'mail' )
       );
       $ldap_entries = ldap_get_entries( $service_bind, $search_result );
       $login_valid = 0 < $ldap_entries['count'] ? true : false;
 
-      if( $login_valid ) {
-         // TODO: Send the token e-mail/SMS/IM/whatever.
-         
-         // Display the token entry form.
-         ?><div>
-            <label for="modaldapper-token">Key:</label>
-            <input type="text" id="modaldapper-token" />
-            <input type="hidden" id="modaldapper-action" value="token" />
-         </div><?php
-      } else {
-         ?>
-         <div class="modaldapper-error">Invalid.</div>
-         <?php
+      switch( $_GET['retrieve'] ) {
+         case 'email':
+            $retrieve = 'E-Mail';
+            break;
       }
+
+      if( $login_valid ) {
+         
+         $mail_headers = sprintf(
+            "From: %s\r\n",
+            $modaldapper_config['site']['email']
+         );
+
+         // TODO: Generate and store the verification token.
+         $token = '';
+
+         // Send the verification token.
+         switch( $_GET['retrieve'] ) {
+            case 'email':
+               $token_message = sprintf(
+                  'A password reset request has been generated at %s for an '.
+                  "account with this e-mail address attached to it. \r\n\r\n".
+                  'If you did not generate this request, please ignore this '.
+                  'message. Otherwise, please enter the following token into '.
+                  "the token field on the password reset page: \r\n\r\n%s",
+                  $modaldapper_config['site']['name'],
+                  $token
+               );
+               mail(
+                  $ldap_entries[0]['mail'][0],
+                  sprintf(
+                     '%s Password Reset Verification',
+                     $modaldapper_config['site']['name']
+                  ),
+                  wordwrap( $token_message, 70, "\r\n" ),
+                  $mail_headers
+               );
+               break;
+         }
+
+         // E-mail the administrator.
+         if( !empty( $config['admin']['email'] ) ) {
+            $admin_message = sprintf(
+               'A new password reset request has been generated for the user '.
+               '%s by a client at the IP %s.',
+               sanitize( $_GET['login'], PARANOID ),
+               sanitize( $_SERVER['REMOTE_ADDR'], PARANOID )
+            );
+            mail(
+               $config['admin']['email'],
+               sprintf(
+                  '%s New Password Reset Request',
+                  $modaldapper_configconfig['site']['name']
+               ),
+               wordwrap( $admin_message, 70, "\r\n" ),
+               $mail_headers
+            );
+         }
+      }
+         
+      // Always display the token entry form to psyche out guessers.
+      ?><p>
+         A verification token has been transmitted to you through
+         <?php echo( $retrieve ) ?>. Please enter that token in the field below.
+      </p>
+      <div>
+         <label for="modaldapper-token">Token:</label>
+         <input type="text" id="modaldapper-token" />
+         <input type="hidden" id="modaldapper-action" value="token" />
+      </div><?php
       break;
 
    default:
@@ -95,7 +151,7 @@ switch( isset( $_GET['action'] ) ? $_GET['action'] : '' ) {
       <div>
          <label for="modaldapper-retrieve">Retrieval Method:</label>
          <select id="modaldapper-retrieve">
-            <option value="mail">E-Mail</option>
+            <option value="email">E-Mail</option>
          </select>
          <input type="hidden" id="modaldapper-action" value="login" />
       </div><?php
