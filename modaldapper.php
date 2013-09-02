@@ -5,68 +5,10 @@ require_once( 'sanitize.inc.php' );
 
 function modaldapper_ldap_set_password( $ldap, $login=null, $password ) {
 
-   global $modaldapper_config;
-   
-   // Salt and hash the password.
-   mt_srand( (double)microtime() * 1000000 );
-   $salt = pack( 'CCCC', mt_rand(), mt_rand(), mt_rand(), mt_rand() );
-   $hash = '{SSHA}'.base64_encode( pack( 'H*', sha1( $password.$salt) ).$salt );
-
-   // Update the LDAP directory.
-   $entry = array(
-      $modaldapper_config['ldap']['password_field'] => $hash,
-   );
-   $login_dn = sprintf(
-      '%s=%s,%s',
-      $modaldapper_config['ldap']['cn_field'],
-      sanitize( $login, LDAP ),
-      $modaldapper_config['ldap']['basedn']
-   );
-   return ldap_modify( $ldap, $login_dn, $entry );
 }
 
 function modaldapper_ldap_bind( $user=null, $password=null ) {
 
-   // Bind to LDAP with the given credentials or bind with the service account
-   // if no credentials provided.
-
-   global $modaldapper_config;
-
-   // Figure out the credentials to use.
-   if( $user && $password ) {
-      $user_clean = sanitize( $user, LDAP );
-      // It seems ldap_bind may already sanitize its inputs. Sanitizing here
-      // causes a password with special characters not to work.
-      //$password_clean = sanitize( $password, LDAP );
-      $password_clean = $password;
-   } else {
-      $user_clean = sanitize(
-         $modaldapper_config['ldap']['service_user'], LDAP
-      );
-      /* $password_clean = sanitize(
-         $modaldapper_config['ldap']['service_pass'], LDAP
-      ); */
-      $password_clean = $modaldapper_config['ldap']['service_pass'];
-   }
-
-   // Perform the connection.
-   $ldap = ldap_connect(
-      $modaldapper_config['ldap']['host'],
-      $modaldapper_config['ldap']['port']
-   );
-
-   ldap_set_option(
-      $ldap, LDAP_OPT_PROTOCOL_VERSION, $modaldapper_config['ldap']['version']
-   );
-
-   if( !empty( $user_clean ) && !empty( $password_clean ) ) {
-      $bind_result = ldap_bind( $ldap, $user_clean, $password_clean );
-   } else {
-      // Try to bind anonymously if no credentials available.
-      $bind_result = ldap_bind( $ldap );
-   }
-
-   return $bind_result ? $ldap : null;
 }
 
 function modaldapper_database_compare_token_hash( $connection, $hash ) {
@@ -306,22 +248,5 @@ switch( isset( $_GET['action'] ) ? $_GET['action'] : '' ) {
       break;
 
    default:
-      // Show login entry form.
-      ?><p>
-         Please enter your current login name and select a method to
-         retrieve your password change token.
-      </p>
-      <div>
-         <label for="login">Login Name:</label>
-         <input type="text" id="modaldapper-login" />
-      </div>
-      <div>
-         <label for="modaldapper-retrieve">Retrieval Method:</label>
-         <select id="modaldapper-retrieve">
-            <option value="email">E-Mail</option>
-         </select>
-         <input type="hidden" id="modaldapper-action" value="login" />
-      </div><?php
-      break;
 }
 ?></form>
