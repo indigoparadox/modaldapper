@@ -21,8 +21,6 @@ $f3->config( 'config/modaldapper.cfg' );
 
 require_once( 'include/sanitize.php' );
 
-// TODO: Verify HTTPS.
-
 function modaldapper_hash( $token ) {
    global $f3;
    return crypt( $token, '$5$rounds=5000$'.$f3->get( 'db_salt' ).'$' );
@@ -43,6 +41,12 @@ function modaldapper_email_admin( $op, $user, $ip ) {
          sprintf( "From: %s\r\n", $f3->get( 'site_email' ) )
       );
    }
+}
+
+// Verify HTTPS.
+if( $f3->get( 'site_https' ) && empty( $_SERVER['HTTPS'] ) ) {
+   echo( 'HTTPS required.' );
+   return;
 }
 
 $f3->route( 'GET /password [ajax]', function() {
