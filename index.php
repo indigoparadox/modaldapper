@@ -1,5 +1,21 @@
 <?php
 
+/* 
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+*/
+
 $f3 = require( 'include/f3/base.php' );
 $f3->config( 'config/modaldapper.cfg' );
 
@@ -43,8 +59,9 @@ $f3->route( 'GET /password [ajax]', function() {
    $tokens->load();
    while( !$tokens->dry() ) {
       if( $tokens->token_hash == $token_hash ) {
-         // TODO: Delete all existing tokens for this user.
          $token_login = $tokens->login;
+         // Delete all existing tokens for this user.
+         $db->exec( 'DELETE FROM tokens WHERE login=:login', $token_login );
          break;
       }
       $tokens->next();
@@ -56,7 +73,13 @@ $f3->route( 'GET /password [ajax]', function() {
       return;
    }
 
-   // TODO: Validate the new account password.
+   // Validate the new account password.
+   if(
+      $f3->get( 'site_pwd_min_length' ) > strlen( $f3->get( 'GET.password' ) )
+   ) {
+      echo( Template::instance()->render( 'templates/badpwdshort.html' ) );
+      return;
+   }
 
    // Set the new account password.
    $ldap = require( 'include/reset.php' );
@@ -72,7 +95,7 @@ $f3->route( 'GET /password [ajax]', function() {
    );
 
    modaldapper_email_admin(
-      'redeemed', $f3->get( 'GET.login' ), $f3->get( 'SERVER.REMOTE_ADDR' )
+      'redeemed', $token_login, $f3->get( 'SERVER.REMOTE_ADDR' )
    );
 
    // Display outcome.

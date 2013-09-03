@@ -43,8 +43,12 @@ function modaldapper_submit() {
                { 'opacity': 1 },
                250,
                function() {
-                  $('#modaldapper-submit').bind( 'click', modaldapper_submit );
-                  $('#modaldapper-submit').attr( 'disabled', false );
+                  if( 'close' != $('#modaldapper-action').val() ) {
+                     $('#modaldapper-submit').bind(
+                        'click', modaldapper_submit
+                     );
+                     $('#modaldapper-submit').attr( 'disabled', false );
+                  }
 
                   // Prepare special elements that may be present.
                   $('#modaldapper-password').passStrengthify();
@@ -86,15 +90,15 @@ function modaldapper_get_path() {
 
 $(document).ready( function() {
    // Load dependencies before we're allowed to proceed.
-   $('#password-reset-ldap').css( 'display', 'none' );
+   $('#modaldapper-link').css( 'display', 'none' );
    $.getScript(
-      modaldapper_get_path() + 'jquery.simplemodal.min.js',
+      modaldapper_get_path() + 'scripts/jquery.simplemodal.min.js',
       function() {
          $.getScript(
-            modaldapper_get_path() + 'jquery.passstrength.js',
+            modaldapper_get_path() + 'scripts/jquery.passstrength.js',
             function() {
-               $('#password-reset-ldap').fadeIn();
-               $('#password-reset-ldap').click( modaldapper_reset_link );
+               $('#modaldapper-link').fadeIn();
+               $('#modaldapper-link').click( modaldapper_reset_link );
             }
          );
       }
