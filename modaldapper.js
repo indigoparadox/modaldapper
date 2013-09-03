@@ -1,10 +1,11 @@
 
 var modaldapper_path = modaldapper_get_path();
 
+// Figure out what the current form does and build the submit path accordingly.
+// Sanitization and validation happen server-side.
 function modaldapper_submit() {
 
-   // Figure out what the current form does and build the submit path
-   // accordingly. Sanitization and validation happen server-side.
+   // TODO: Figure out fields to submit automatically.
    var action = $('#modaldapper-action').val();
    if( undefined === action ) {
       var modaldapper_path_query = modaldapper_path;
@@ -54,6 +55,7 @@ function modaldapper_submit() {
    );
 }
 
+// Display the window and fetch the form.
 function modaldapper_reset_link() {
    $('<link>')
       .appendTo( $('head') )
@@ -76,6 +78,7 @@ function modaldapper_reset_link() {
    modaldapper_submit();
 }
 
+// Get the path to modaldapper scripts/css/etc.
 function modaldapper_get_path() {
    return $('script[src]').last().attr( 'src' ).split( '?' )[0].split( '/' )
       .slice( 0, -1 ).join( '/' ) + '/';
