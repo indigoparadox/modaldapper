@@ -26,20 +26,34 @@ function modaldapper_hash( $token ) {
    return crypt( $token, '$5$rounds=5000$'.$f3->get( 'db_salt' ).'$' );
 }
 
-function modaldapper_email_admin( $op, $user, $ip ) {
+function modaldapper_notify_admin( $op, $user, $ip ) {
    global $f3;
-   if( $f3->get( 'admin_email' ) ) {
-      $f3->set( 'req_op', $op );
-      $f3->set( 'req_user', $user );
-      $f3->set( 'req_ip', $ip );
-      mail(
-         $f3->get( 'admin_email' ),
-         sprintf( '%s Password Reset Information', $f3->get( 'site_name' ) ),
-         wordwrap(
-            Template::instance()->render( 'mail/admin.txt' ), 70, "\r\n"
-         ),
-         sprintf( "From: %s\r\n", $f3->get( 'site_email' ) )
-      );
+   switch( $f3->get( 'admin_notify' ) ) {
+      case 'email':
+         $f3->set( 'req_op', $op );
+         $f3->set( 'req_user', $user );
+         $f3->set( 'req_ip', $ip );
+         mail(
+            $f3->get( 'admin_email' ),
+            sprintf( '%s Password Reset Information', $f3->get( 'site_name' ) ),
+            wordwrap(
+               Template::instance()->render( 'mail/admin.txt' ), 70, "\r\n"
+            ),
+            sprintf( "From: %s\r\n", $f3->get( 'site_email' ) )
+         );
+         break;
+
+      case 'syslog':
+         syslog(
+            LOG_NOTICE,
+            sprintf(
+               'LDAP password reset %s for %s by: %s'
+               $op,
+               $user,
+               $ip
+            )
+         );
+         break;
    }
 }
 
@@ -95,7 +109,7 @@ $f3->route( 'GET /password [ajax]', function() {
    );
    $success = $ldap->password( $token_login, $f3->get( 'GET.password' ) );
 
-   modaldapper_email_admin(
+   modaldapper_notify_admin(
       'redeemed', $token_login, $f3->get( 'SERVER.REMOTE_ADDR' )
    );
 
@@ -157,7 +171,7 @@ $f3->route( 'GET /token [ajax]', function() {
       $token
    );
 
-   modaldapper_email_admin(
+   modaldapper_notify_admin(
       'generated', $f3->get( 'GET.login' ), $f3->get( 'SERVER.REMOTE_ADDR' )
    );
 } );
