@@ -4,6 +4,7 @@
 site_name="My Site"
 site_email="noreply@example.com"
 site_pwd_min_length=10
+site_https=false
 
 ldap_host="localhost"
 ldap_port=389
@@ -14,11 +15,13 @@ ldap_version=3
 ldap_fieldmap[cn]="uid"
 ldap_fieldmap[userPassword]="userPassword"
 ldap_fieldmap[mail]="mail"
+ldap_fieldmap[shadowLastChange]="shadowLastChange"
 
 db_config="mysql:host=localhost;dbname=ldap_reset"
 db_user="ldap_reset"
 db_pass=""
 db_salt="" // Must be 16 characters long.
 
+admin_notify="email"
 admin_email="admin@example.com"
 
