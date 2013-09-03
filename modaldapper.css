@@ -9,12 +9,17 @@
     * main contents window is hidden.                                         */
    background: white url( ajax-loader.gif ) no-repeat center 40%;
    border-radius: 20px;
-   padding: 10px;
+   margin: -20px 0 0 -20px;
+   padding: 20px;
 }
 
 #modaldapper-window-contents {
    background: white;
    height: 275px;
+}
+
+#modaldapper-window-contents p {
+   margin-bottom: 10px;
 }
 
 #modaldapper-window-controls {
@@ -27,5 +32,10 @@
    position: relative;
    left: 15px;
    top: 5px;
+}
+
+#modaldapper-window .error {
+   color: red;
+   margin: 30px 10px 0px 10px;
 }
 

@@ -3,6 +3,7 @@
 
 site_name="My Site"
 site_email="noreply@example.com"
+site_pwd_min_length=10
 
 ldap_host="localhost"
 ldap_port=389
