@@ -1,1 +1,6 @@
+A password reset request has been generated at {{@site_name}} for an account with this e-mail address attached to it.
+
+If you did not generate this request, please ignore this message. Otherwise, please enter the following token into the token field on the password reset page:
+
+{{@req_token}}
 

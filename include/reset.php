@@ -2,30 +2,24 @@
 
 class LDAPReset {
    protected $connection;
+   public $result;
 
-/*
-   public function password( $user, $new_password ) {
-      global $modaper_config;
-      
+   public function password( 
+      $user, $new_password, $passfield, $cnfield, $basedn
+   ) {
       // Salt and hash the password.
       mt_srand( (double)microtime() * 1000000 );
       $salt = pack( 'CCCC', mt_rand(), mt_rand(), mt_rand(), mt_rand() );
-      $hash = '{SSHA}'.base64_encode( pack( 'H*', sha1( $new_password.$salt) ).
-         $salt );
+      $hash = '{SSHA}'.
+         base64_encode( pack( 'H*', sha1( $new_password.$salt) ).$salt );
 
       // Update the LDAP directory.
       $entry = array(
-         $modaper_config['ldap']['password_field'] => $hash,
+         $passfield => $hash,
       );
-      $user_dn = sprintf(
-         '%s=%s,%s',
-         $modaper_config['ldap']['cn_field'],
-         sanitize( $user, LDAP ),
-         $modaper_config['ldap']['basedn']
-      );
-      return ldap_modify( $ldap, $user_dn, $entry );
+      $user_dn = sprintf( '%s=%s,%s', $cnfield, $user, $basedn );
+      return ldap_modify( $this->connection, $user_dn, $entry );
    }
-*/
 
    public function search( $user, $cnfield, $basedn ) {
       $query = sprintf( '(%s=%s)', $cnfield, $user );
@@ -35,7 +29,7 @@ class LDAPReset {
          $query,
          array( $cnfield, 'mail' )
       );
-      return ldap_get_entries( $this->connection, $result );
+      return $this->result = ldap_get_entries( $this->connection, $result );
    }
 
    public function connect( $user, $password, $host, $port, $version ) {

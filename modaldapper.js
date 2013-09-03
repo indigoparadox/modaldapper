@@ -1,25 +1,29 @@
 
-var modaldapper_path = modaldapper_get_path() + 'modaldapper.php';
+var modaldapper_path = modaldapper_get_path();
 
 function modaldapper_submit() {
 
    // Figure out what the current form does and build the submit path
    // accordingly. Sanitization and validation happen server-side.
    var action = $('#modaldapper-action').val();
-   var modaldapper_path_query = modaldapper_path + '?action=' + action;
+   if( undefined === action ) {
+      var modaldapper_path_query = modaldapper_path;
+   } else {
+      var modaldapper_path_query = modaldapper_path + action;
+   }
    switch( action ) {
-      case 'token':
+      case 'password':
          var login = $('#modaldapper-login').val();
          var token = $('#modaldapper-token').val();
          var password = $('#modaldapper-password').val();
-         modaldapper_path_query += '&login=' + login + '&token=' + token +
+         modaldapper_path_query += '?login=' + login + '&token=' + token +
             '&password=' + password;
          break;
 
-      case 'login':
+      default:
          var login = $('#modaldapper-login').val();
          var retrieve = $('#modaldapper-retrieve').val();
-         modaldapper_path_query += '&login=' + login + '&retrieve=' + retrieve;
+         modaldapper_path_query += '?login=' + login + '&retrieve=' + retrieve;
          break;
    }
 
