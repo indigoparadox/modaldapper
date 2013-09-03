@@ -4,6 +4,11 @@ class LDAPReset {
    protected $connection;
    public $result;
 
+   // Reset the password for user specified by $user/$basedn as stored in their
+   // $passfield.
+   // TODO: Reset password clocks/retry counts/etc.
+   // TODO: Allow specifying mail field.
+   // TODO: Specify field names in an array.
    public function password( 
       $user, $new_password, $passfield, $cnfield, $basedn
    ) {
@@ -21,6 +26,7 @@ class LDAPReset {
       return ldap_modify( $this->connection, $user_dn, $entry );
    }
 
+   // Search for the user specified by $user/$basedn.
    public function search( $user, $cnfield, $basedn ) {
       $query = sprintf( '(%s=%s)', $cnfield, $user );
       $result = ldap_search(
@@ -32,6 +38,7 @@ class LDAPReset {
       return $this->result = ldap_get_entries( $this->connection, $result );
    }
 
+   // Connect to the LDAP server.
    public function connect( $user, $password, $host, $port, $version ) {
       $this->connection = ldap_connect( $host, $port );
       ldap_set_option( $this->connection, LDAP_OPT_PROTOCOL_VERSION, $version );
