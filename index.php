@@ -21,6 +21,10 @@ $f3->config( 'config/modaldapper.cfg' );
 
 require_once( 'include/sanitize.php' );
 
+if( 'syslog' == $f3->get( 'admin_notify' ) ) {
+   openlog( 'ModaLDapper', LOG_PID | LOG_CONS, LOG_AUTH );
+}
+
 function modaldapper_hash( $token ) {
    global $f3;
    return crypt( $token, '$5$rounds=5000$'.$f3->get( 'db_salt' ).'$' );
@@ -47,7 +51,7 @@ function modaldapper_notify_admin( $op, $user, $ip ) {
          syslog(
             LOG_NOTICE,
             sprintf(
-               'LDAP password reset %s for %s by: %s'
+               'LDAP password reset %s for %s by: %s',
                $op,
                $user,
                $ip
