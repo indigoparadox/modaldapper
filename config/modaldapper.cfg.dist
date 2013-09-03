@@ -10,9 +10,10 @@ ldap_port=389
 ldap_service_user="cn=pwdchanger,dc=example,dc=com"
 ldap_service_pass=""
 ldap_base_dn="ou=people,dc=example,dc=com"
-ldap_cn_field="cn"
-ldap_password_field="userPassword"
 ldap_version=3
+ldap_fieldmap[cn]="uid"
+ldap_fieldmap[userPassword]="userPassword"
+ldap_fieldmap[mail]="mail"
 
 db_config="mysql:host=localhost;dbname=ldap_reset"
 db_user="ldap_reset"
