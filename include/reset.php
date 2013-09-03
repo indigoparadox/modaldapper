@@ -2,8 +2,11 @@
 
 class LDAPReset {
    protected $connection;
-   protected $fieldmap =
-      array( 'cn' => 'cn', 'userPassword' => 'userPassword' );
+   protected $fieldmap = array(
+      'cn' => 'cn',
+      'userPassword' => 'userPassword',
+      'shadowLastChange' => 'shadowLastChange',
+   );
    public $result;
 
    // Reset the password for user specified by $user/$basedn as stored in their
@@ -17,7 +20,11 @@ class LDAPReset {
          base64_encode( pack( 'H*', sha1( $new_password.$salt) ).$salt );
 
       // Update the LDAP directory.
-      $entry = array( $this->fieldmap['userPassword'] => $hash );
+      $entry = array(
+         $this->fieldmap['userPassword'] => $hash,
+         // TODO: Causes WSOD, for some reason.
+         //$this->fieldmap['shadowLastChange'] = time() / 86400,
+      );
       $user_dn = sprintf(
          '%s=%s,%s', $this->fieldmap['cn'], $user, $this->basedn
       );
