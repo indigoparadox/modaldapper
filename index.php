@@ -83,16 +83,13 @@ $f3->route( 'GET /password [ajax]', function() {
 
    // Set the new account password.
    $ldap = require( 'include/reset.php' );
+   $ldap->fields( $f3->get( 'ldap_fieldmap' ) );
    $ldap->connect(
       $f3->get( 'ldap_service_user' ), $f3->get( 'ldap_service_pass' ),
       $f3->get( 'ldap_host' ), $f3->get( 'ldap_port' ),
-      $f3->get( 'ldap_version' )
+      $f3->get( 'ldap_version' ), $f3->get( 'ldap_base_dn' )
    );
-   $success = $ldap->password(
-      $token_login, $f3->get( 'GET.password' ),
-      $f3->get( 'ldap_password_field' ), $f3->get( 'ldap_cn_field' ),
-      $f3->get( 'ldap_base_dn' )
-   );
+   $success = $ldap->password( $token_login, $f3->get( 'GET.password' ) );
 
    modaldapper_email_admin(
       'redeemed', $token_login, $f3->get( 'SERVER.REMOTE_ADDR' )
@@ -115,16 +112,13 @@ $f3->route( 'GET /token [ajax]', function() {
 
    // Determine if the login is valid.
    $ldap = require( 'include/reset.php' );
+   $ldap->fields( $f3->get( 'ldap_fieldmap' ) );
    $ldap->connect(
       $f3->get( 'ldap_service_user' ), $f3->get( 'ldap_service_pass' ),
       $f3->get( 'ldap_host' ), $f3->get( 'ldap_port' ),
-      $f3->get( 'ldap_version' )
+      $f3->get( 'ldap_version' ), $f3->get( 'ldap_base_dn' )
    );
-   $ldap->search(
-      sanitize( $f3->get( 'GET.login' ), LDAP ),
-      $f3->get( 'ldap_cn_field' ),
-      $f3->get( 'ldap_base_dn' )
-   );
+   $ldap->search( sanitize( $f3->get( 'GET.login' ), LDAP ) );
    $login_valid = 0 < $ldap->result['count'] ? true : false;
 
    echo( Template::instance()->render( 'templates/token.html' ) );
